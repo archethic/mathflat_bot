@@ -1,55 +1,48 @@
-var token = null;
-var classID = null;
-
-const mathflat = {
-    login: function(id, password) {
+module.exports = /** @class */ (function () {
+    function mathflat(id, pw) {
         const res = Jsoup.connect('https://api-live.mathflat.com/users/login').header("Content-Type", "application/json;charset=utf-8")
-        .requestBody(JSON.stringify({"loginID":id,"loginPW":password})).ignoreContentType(true)
+        .requestBody(JSON.stringify({"loginID":id,"loginPW":pw})).ignoreContentType(true)
         var status = res.method(org.jsoup.Connection.Method.POST).execute().statusCode()
         if(status == 200) {
-            token = JSON.parse(res.post().text()).token
-            classID = JSON.parse(res.post().text()).classId;
-            return "Login Success token: "+ token + " | id: " + classID;
+            this.token = JSON.parse(res.post().text()).token
+            this.classID = JSON.parse(res.post().text()).classId;
+            return "Login Success token: "+ this.token + " | id: " + classID;
         } else {
             return res.post().text();
         }
-    },
-    student: function() {
-        //https://api-live.mathflat.com/classes/D7928/students
-        if(token == null || classID == null) return "먼저 로그인을 해주세요"
-        const res = Jsoup.connect('https://api-live.mathflat.com/classes/' + classID + '/students').header("Content-Type", "application/json;charset=utf-8").header("x-auth-token", token).ignoreHttpErrors(true)
-        .ignoreContentType(true)
-        var status = res.method(org.jsoup.Connection.Method.GET).execute().statusCode()
+    }
+    mathflat.prototype.studentList = function () {
+        if(this.token == null || this.classID == null) return "먼저 로그인을 해주세요";
+        const res = Jsoup.connect('https://api-live.mathflat.com/classes/' + this.classID + '/students').header("Content-Type", "application/json;charset=utf-8").header("x-auth-token", this.token).ignoreHttpErrors(true)
+        .ignoreContentType(true).method(org.jsoup.Connection.Method.GET).execute();
+        const status = res.statusCode();
         if(status == 200) {
-            return JSON.parse(res.get().text());
+            return JSON.parse(res.body());
         } else {
-            return res.get().text();
-        }
-    },
-    examlist: function (studentId) {
-        //https://api-live.mathflat.com/students/I275529/assigned-pieces
-        if(token == null || classID == null) return "먼저 로그인을 해주세요"
-        const res = Jsoup.connect("https://api-live.mathflat.com/students/"+studentId+"/assigned-pieces").header("Content-Type", "application/json;charset=utf-8").header("x-auth-token", token).ignoreHttpErrors(true)
-        .ignoreContentType(true)
-        var status = res.method(org.jsoup.Connection.Method.GET).execute().statusCode()
-        if(status == 200) {
-            return JSON.parse(res.get().text());
-        } else {
-            return res.get().text();
-        }
-    },
-    examAnswer: function (examId) {
-        //https://api-live.mathflat.com/assigned-pieces/8895228/marking
-        if(token == null || classID == null) return "먼저 로그인을 해주세요"
-        const res = Jsoup.connect("https://api-live.mathflat.com/assigned-pieces/"+examId+"/marking").header("Content-Type", "application/json;charset=utf-8").header("x-auth-token", token).ignoreHttpErrors(true)
-        .ignoreContentType(true)
-        var status = res.method(org.jsoup.Connection.Method.GET).execute().statusCode()
-        if(status == 200) {
-            return JSON.parse(res.get().text());
-        } else {
-            return res.get().text();
+            return res.body();
         }
     }
-}
-
-exports.mathflat = mathflat, token, classID;
+    mathflat.prototype.examList = function (studentId) {
+        if(this.token == null || this.classID == null) return "먼저 로그인을 해주세요";
+        const res = Jsoup.connect("https://api-live.mathflat.com/students/"+studentId+"/assigned-pieces").header("Content-Type", "application/json;charset=utf-8").header("x-auth-token", this.token).ignoreHttpErrors(true)
+        .ignoreContentType(true).method(org.jsoup.Connection.Method.GET).execute();
+        var status = res.statusCode();
+        if(status == 200) {
+            return JSON.parse(res.body());
+        } else {
+            return res.body();
+        }
+    }
+    mathflat.prototype.examAnswer = function (examId) {
+        if(this.token == null || this.classID == null) return "먼저 로그인을 해주세요";
+        const res = Jsoup.connect("https://api-live.mathflat.com/assigned-pieces/"+examId+"/marking").header("Content-Type", "application/json;charset=utf-8").header("x-auth-token", this.token).ignoreHttpErrors(true)
+        .ignoreContentType(true).method(org.jsoup.Connection.Method.GET).execute();
+        var status = res.statusCode();
+        if(status == 200) {
+            return JSON.parse(res.body());
+        } else {
+            return res.body();
+        }
+    }
+    return mathflat;
+})();

@@ -1,14 +1,13 @@
 module.exports = /** @class */ (function () {
     function mathflat(id, pw) {
         const res = Jsoup.connect('https://api-live.mathflat.com/users/login').header("Content-Type", "application/json;charset=utf-8")
-        .requestBody(JSON.stringify({"loginID":id,"loginPW":pw})).ignoreContentType(true)
-        var status = res.method(org.jsoup.Connection.Method.POST).execute().statusCode()
-        if(status == 200) {
-            this.token = JSON.parse(res.post().text()).token
-            this.classID = JSON.parse(res.post().text()).classId;
-            return "Login Success token: "+ this.token + " | id: " + classID;
+        .requestBody(JSON.stringify({"loginID":id,"loginPW":pw})).ignoreContentType(true).method(org.jsoup.Connection.Method.POST).execute();
+        if(res.statusCode() == 200) {
+            this.token = JSON.parse(res.body()).token
+            this.classID = JSON.parse(res.body()).classId;
+            return "Login Success token: "+ this.token + " | id: " + this.classID;
         } else {
-            return res.post().text();
+            return res.body();
         }
     }
     mathflat.prototype.studentList = function () {
@@ -55,13 +54,21 @@ module.exports = /** @class */ (function () {
     }
     mathflat.prototype.editAnswer = function (examID, params) {
         if(this.token == undefined || this.classID == undefined) return "먼저 로그인을 해주세요";
-        if(typeof params === 'object') throw new Error("params is must json")
+        if(typeof params !== 'object') throw new Error("params is must json")
+        /**
+         * Content-Length: 38, NONE
+         * Content-Length: 39, WRONG
+         * Content-Length: 41, CORRECT
+         */
+        const Content = JSON.stringify(params);
         const res = Jsoup.connect("https://api-live.mathflat.com/assigned-pieces/"+examID+"/marking")
             .header("Content-Type", "application/json;charset=utf-8")
             .header("x-auth-token", this.token)
-            .requestBody(JSON.stringify(params))
-            .ignoreContentType(true).ignoreHttpErrors(true).method(org.jsoup.Connection.Method.GET).execute();
-        return res;
+            .header('Content-Length', Content.length)
+            .requestBody(Content)
+            .ignoreContentType(true).ignoreHttpErrors(true).method(org.jsoup.Connection.Method.PATCH).execute();
+        if(res.statusCode() !== 200) throw new Error(res.statusCode());
+        return true;
     }
     return mathflat;
 })();
